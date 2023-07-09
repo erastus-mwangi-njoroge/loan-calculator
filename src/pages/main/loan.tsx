@@ -50,22 +50,26 @@ export const Loan = ({ loan }: Props) => {
 
     if (loan.paymentFrequency === "monthly") {
       time *= 12;
+      rate /=12;
     } else if (loan.paymentFrequency === "quarterly") {
       time *= 4;
+      rate /= 4;
     } else if (loan.paymentFrequency === "semiannually") {
       time *= 2;
+      rate /= 2;
     } else {
       time *= 1;
+      rate /=1; 
     }
 
-    if (rate === 0.25) {
+    if (loan.interestType === "reducing-balance") {
       let installments = time;
       let balance = loan.loanAmount;
       let payment = balance / installments;
       let principalPayment = loan.loanAmount / time;
       const loanInstallments = [];
 
-      for (let i = 0; i < installments; i++) {
+      for (let i = 0; i < time; i++) {
         let interestPayment = balance * rate;
         let principalPayment = payment - interestPayment;
         balance -= interestPayment;
@@ -87,26 +91,23 @@ export const Loan = ({ loan }: Props) => {
 
       return { emi, totalLoanPayable, loanInstallments };
     } else {
-      let interestPerInstallment = (loan.loanAmount * loan.loanPeriod * rate) / time;
       let installments = time;
-      let balance = 0;
+      let balance = loan.loanAmount;
       let totalPayment = 0;
+      const x = Math.pow(1 + rate, time);
+      const interestPerInstallment = (loan.loanAmount * x * rate) / (x - 1);
       let payment = loan.loanAmount / installments;
       let emi = interestPerInstallment + payment;
       const loanInstallments = [];
 
-      for (let i = 0; i < installments; i++) {
-        balance = loan.loanAmount - interestPerInstallment;
-        let interestPayment = balance * rate;
-        let principalPayment = payment - interestPayment;
-        balance -= interestPayment;
-        totalInterest += interestPayment;
-        totalPayment += emi;
+      for (let i = 0; i < time; i++) {
+        balance>=0 ? (balance - interestPerInstallment) : 0;
+        totalInterest += interestPerInstallment;
         const installmentNumber = i + 1;
         loanInstallments.push({
           installmentNumber,
           loanBorrowed: loan.loanAmount,
-          interests: interestPayment,
+          interests: interestPerInstallment,
           rate,
           emi,
           balance,
